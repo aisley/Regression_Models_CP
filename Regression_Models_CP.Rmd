@@ -1,0 +1,101 @@
+---
+output: pdf_document
+---
+```{r Lib_DataLoad, echo = FALSE, warning=FALSE}
+library(ggplot2)
+
+data(mtcars)
+mtcars_raw <- mtcars
+mtcars_convert <- mtcars
+mtcars_convert$am <- factor(mtcars_convert$am, levels=c(0,1), labels=c('Automatic', 'Manual'))
+
+```
+#Regression Models Class Project
+
+##Executive Summary
+
+To help our subscribers select a car with the best gas milage, we are going to perform an analysys of MPG for Automatic vs Manual transmission.  We will begin by looking at a data set for a collection of 1974 cars.  During our analysis, it will be important to discuss how each feature set impacts MPG.  Its even more important to compare like for like feature sets for Automatic and Manual Transmissionts
+
+##Exploratory Data Analysis
+The data set consists of 32 observations with 11 variables or potential feature sets.
+
+- **mpg**:      Miles/(US) gallon
+- **cyl**:	 Number of cylinders
+- **disp**:	 Displacement (cu.in.)
+- **hp**:	 Gross horsepower
+- **drat**:	 Rear axle ratio
+- **wt**:	 Weight (lb/1000)
+- **qsec**:	 1/4 mile time
+- **vs**:	 V/S
+- **am**:	 Transmission (0 = automatic, 1 = manual)
+- **gear**:	 Number of forward gears
+- **carb**:	 Number of carburetors
+
+
+To better understand the data, lets look at a simple box plot to identify if there is a difference between the mean MPG for Automatic and Manual Transmissions.
+```{r 'Exploratory Data Analysis', echo=FALSE, fig.width=5,fig.height=3}
+boxplot(mpg~am,data=mtcars_convert,xlab="Transmition",ylab='Miles Per Galon',fill=mtcars$am, main='MPG by Transmission type',names=c("Automatic","Manual"),col=c("Blue","gray"))
+```
+
+This can further be verified by looking at the inference using a **T** test:
+
+```{r 'Inference Testing',echo=FALSE}
+means<-t.test(mpg~am,data=mtcars_convert)
+simple_model<-lm(mpg~am,data=mtcars)
+```
+The mean MPG for the manual transmission cars is **`r means$estimate[2]`**, or about **`r means$estimate[2]-means$estimate[1]`** higher MPG than the automatic cars. *See Figure 1 - Means Analysis*
+
+\pagebreak
+
+##Regression Analysis
+Another method to analyze the data is to create a simple regression model model for MPG to Transmission types.  However this model does not offer additional information compared to the  T test. The **Intercept** of this model (`r simple_model$coefficients[1]`) represents the mean MPG for Automatics.  The  **AM coefficient**  (`r simple_model$coefficients[2]`) represents the different MPG between the Automatic vs Manual Transmissions.  These results are the same as the T-Test perfomred above.
+
+The only conclusion we can make from this is that MPG is affected by other fatures of the data set. 
+
+By using the **COR** function in R we can determine how each field is related to the MPG.
+
+From *Figure 2. (Correlations Analysis)*, we can see that wt-Weight, cyl-Number of cylinders, disp-Displacement (cu.in.), and hp-Gross horsepower and carb-Number of carburetors have a negative impact on MPG.  While qsec-1/4 mile time, gear-Number of forward gears, vs(not sure what this is) and drat-Rear axle ratio have a positive impact on MPG.  
+
+```{r 'compare models',echo=FALSE}
+complex_model<-lm(mpg~wt+cyl+disp+hp+carb+qsec+am+vs+drat,data=mtcars_raw)
+compare_models<-anova(simple_model,complex_model)
+```
+The comparison of teh complex model adn teh simple model shows a very small ***p-value***(`r compare_models[2,6]`), which allows us to reject the **Null Hypothesis**.  This indicates that the complex model may explain the explain the *MPG* better than the simple model. *See Figure 3 - Model COmparision*
+
+##Conclusion
+By analysing the new multivariable model, we can see how MPG is affected by each variable. *See Figure 4 - Model Summary*
+
+With a **R-squared** value of (`r summary(complex_model)$r.squared`), this model explains the variance in MPG when looking at all the variables in the data set.  The order of impact to MPG is a follows.
+
+1) The greatest impact on **MPG** is not the type of transmission in the car, but the weight of the car.  For every 1000 lbs, **MPG** is decreased by avg of **`r summary(complex_model)$coefficients[2,1]` MPG**
+2) A Manual transmission will add an average of **`r summary(complex_model)$coefficients[8,1]`** MPG.
+3) Lastly the **drat**: Rear axle ratio and the **qsec**: 1/4 mile time have an impact on MPG of (`r summary(complex_model)$coefficients[10,1]`) and (`r summary(complex_model)$coefficients[7,1]`) respectively.
+
+In summary, if a consumer wants to get the most **MPG** from there next car, they should first look at the lighter cars first then the Transmission type.
+
+
+
+\pagebreak
+
+##Apendix
+###Figure 1 - Means Analysis
+```{r 'Means Analysis'}
+print(means)
+```
+
+###Figure 2 - Correlations Analysis
+```{r 'correlations', echo=TRUE}
+sort(cor(mtcars_raw)[1,])
+```
+
+###Figure 3 - Model Comparision
+```{r 'Model Comparision'}
+print(compare_models)
+```
+
+\pagebreak
+
+###Figure 4 - Model Summary
+```{r 'Model Summary'}
+summary(complex_model)
+```
